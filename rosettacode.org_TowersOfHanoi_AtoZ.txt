@@ -1,0 +1,2635 @@
+*        Towers of Hanoi           08/09/2015
+HANOITOW CSECT
+         USING  HANOITOW,R12       r12 : base register
+         LR     R12,R15            establish base register
+         ST     R14,SAVE14         save r14
+BEGIN    LH     R2,=H'4'           n <===
+         L      R3,=C'123 '        stating position
+         BAL    R14,MOVE           r1=move(m,n)
+RETURN   L      R14,SAVE14         restore r14
+         BR     R14                return to caller
+SAVE14   DS     F                  static save r14
+PG       DC     CL44'xxxxxxxxxxxx Move disc from pole X to pole Y' 
+NN       DC     F'0'
+POLEX    DS     F                  current poles
+POLEN    DS     F                  new poles
+*        ....   recursive          subroutine move(n, poles)  [r2,r3]
+MOVE     LR     R10,R11            save stackptr (r11) in r10 temp
+         LA     R1,STACKLEN        amount of storage required
+         GETMAIN RU,LV=(R1)        allocate storage for stack
+         USING  STACKDS,R11        make storage addressable
+         LR     R11,R1             establish stack addressability
+         ST     R14,SAVE14M        save previous r14
+         ST     R10,SAVE11M        save previous r11
+         LR     R1,R5              restore saved argument r5
+BEGINM   STM    R2,R3,STACK        push arguments to stack
+         ST     R3,POLEX
+         CH     R2,=H'1'           if n<>1
+         BNE    RECURSE            then goto recurse
+         L      R1,NN
+         LA     R1,1(R1)           nn=nn+1
+         ST     R1,NN
+         XDECO  R1,PG              nn
+         MVC    PG+33(1),POLEX+0   from
+         MVC    PG+43(1),POLEX+1   to
+         XPRNT  PG,44              print "move disk from to"
+         B      RETURNM
+RECURSE  L      R2,N               n
+         BCTR   R2,0               n=n-1
+         MVC    POLEN+0(1),POLES+0 from
+         MVC    POLEN+1(1),POLES+2 via
+         MVC    POLEN+2(1),POLES+1 to
+         L      R3,POLEN           new poles
+         BAL    R14,MOVE           call move(n-1,from,via,to)
+         LA     R2,1               n=1
+         MVC    POLEN,POLES 
+         L      R3,POLEN           new poles
+         BAL    R14,MOVE           call move(1,from,to,via)
+         L      R2,N               n
+         BCTR   R2,0               n=n-1
+         MVC    POLEN+0(1),POLES+2 via
+         MVC    POLEN+1(1),POLES+1 to
+         MVC    POLEN+2(1),POLES+0 from
+         L      R3,POLEN           new poles
+         BAL    R14,MOVE           call move(n-1,via,to,from)
+RETURNM  LM     R2,R3,STACK        pull arguments from stack
+         LR     R1,R11             current stack
+         L      R14,SAVE14M        restore r14
+         L      R11,SAVE11M        restore r11
+         LA     R0,STACKLEN        amount of storage to free
+         FREEMAIN A=(R1),LV=(R0)   free allocated storage
+         BR     R14                return to caller
+         LTORG
+         DROP   R12                base no longer needed
+STACKDS  DSECT                     dynamic area
+SAVE14M  DS     F                  saved r14
+SAVE11M  DS     F                  saved r11
+STACK    DS     0F                 stack
+N        DS     F                  r2 n
+POLES    DS     F                  r3 poles
+STACKLEN EQU    *-STACKDS
+         YREGS  
+         END    HANOITOW
+
+5 var, disks
+var sa
+var sb
+var sc
+ 
+: save sc ! sb ! sa ! disks ! ;
+: get sa @ sb @ sc @ ;
+: get2 get swap ;
+: hanoi
+	save disks @ not if ;; then
+	disks @ get
+	disks @ n:1- get2 hanoi save
+	cr 
+	" move a ring from " .  sa @ . " to " . sb @ .
+	disks @ n:1- get2 rot hanoi
+;
+ 
+" Tower of Hanoi, with " . disks @ . " rings: " . 
+disks @ 1 2 3 hanoi cr bye
+
+public function move(n:int, from:int, to:int, via:int):void
+{
+    if (n > 0)
+    {
+        move(n - 1, from, via, to);
+        trace("Move disk from pole " + from + " to pole " + to);
+        move(n - 1, via, to, from);
+    }
+}
+
+with Ada.Text_Io; use Ada.Text_Io;
+ 
+procedure Towers is
+   type Pegs is (Left, Center, Right);
+   procedure Hanoi (Ndisks : Natural; Start_Peg : Pegs := Left; End_Peg : Pegs := Right; Via_Peg : Pegs := Center) is
+   begin
+      if Ndisks > 0 then
+         Hanoi(Ndisks - 1, Start_Peg, Via_Peg, End_Peg);
+         Put_Line("Move disk" & Natural'Image(Ndisks) & " from " & Pegs'Image(Start_Peg) & " to " & Pegs'Image(End_Peg));
+         Hanoi(Ndisks - 1, Via_Peg, End_Peg, Start_Peg);
+      end if;
+   end Hanoi;
+begin
+   Hanoi(4);
+end Towers;
+
+move := proc(n::number, src::number, dst::number, via::number) is
+   if n > 0 then
+      move(n - 1, src, via, dst)
+      print(src & ' to ' & dst)
+      move(n - 1, via, dst, src)
+   fi
+end
+ 
+move(4, 1, 2, 3)
+
+PROC move = (INT n, from, to, via) VOID:
+  IF n > 0 THEN
+    move(n - 1, from, via, to);
+    printf(($"Move disk from pole "g" to pole "gl$, from, to));
+    move(n - 1, via, to, from)
+  FI
+;
+ 
+main: (
+  move(4, 1,2,3)
+)
+
+begin
+    procedure move ( integer value n, from, to, via ) ;
+        if n > 0 then begin
+            move( n - 1, from, via, to );
+            write( i_w := 1, s_w := 0, "Move disk from peg: ", from, " to peg: ", to );
+            move( n - 1, via, to, from )
+        end move ;
+ 
+    move( 4, 1, 2, 3 )
+end.
+
+PROC move(n, from, to, via)
+  IF n > 0
+    move(n-1, from, via, to)
+    WriteF('Move disk from pole \d to pole \d\n', from, to)
+    move(n-1, via, to, from)
+  ENDIF
+ENDPROC
+ 
+PROC main()
+  move(4, 1,2,3)
+ENDPROC
+
+global moves --this is so the handler 'hanoi' can see the 'moves' variable
+set moves to ""
+hanoi(4, "peg A", "peg C", "peg B")
+ 
+on hanoi(ndisks, fromPeg, toPeg, withPeg)
+    if ndisks is greater than 0 then
+        hanoi(ndisks - 1, fromPeg, withPeg, toPeg)
+        set moves to moves & "Move disk " & ndisks & " from " & fromPeg & " to " & toPeg & return
+        hanoi(ndisks - 1, withPeg, toPeg, fromPeg)
+    end if
+    return moves
+end hanoi
+
+on run
+ 
+    map(arrows, hanoi(3, "left", "right", "mid"))
+ 
+    -- {"left -> right", "left -> mid", "right -> mid", 
+    -- "left -> right", "mid -> left", "mid -> right", "left -> right"} 
+ 
+end run
+ 
+ 
+-- n -> s -> s -> s -> [(s, s)]
+on hanoi(n, a, b, c)
+    if n > 0 then
+        hanoi(n - 1, a, c, b) & {{a, b}} & hanoi(n - 1, c, b, a)
+    else
+        {}
+    end if
+end hanoi
+ 
+ 
+-- DISPLAY FUNCTION
+-- (a, a) -> String
+on arrows(x)
+    item 1 of x & " -> " & item 2 of x
+end arrows
+ 
+-- LIBRARY FUNCTION
+-- map :: (a -> b) -> [a] -> [b]
+on map(f, xs)
+    script mf
+        property lambda : f
+    end script
+ 
+    set lng to length of xs
+    set lst to {}
+    repeat with i from 1 to lng
+        set end of lst to mf's lambda(item i of xs, i, xs)
+    end repeat
+    return lst
+end map
+
+move(n, from, to, via)  ;n = # of disks, from = start pole, to = end pole, via = remaining pole 
+{
+  if (n = 1)
+  {
+    msgbox , Move disk from pole %from% to pole %to% 
+  }
+  else
+  {
+    move(n-1, from, via, to)
+    move(1, from, to, via)
+    move(n-1, via, to, from)
+  }
+}
+move(64, 1, 3, 2)
+
+Func move($n, $from, $to, $via)
+	If ($n = 1) Then
+		ConsoleWrite(StringFormat("Move disk from pole "&$from&" To pole "&$to&"\n"))
+	Else
+		move($n - 1, $from, $via, $to)
+		move(1, $from, $to, $via)
+		move($n - 1, $via, $to, $from)
+	EndIf
+EndFunc
+ 
+move(4, 1,2,3)
+
+$ awk 'func hanoi(n,f,t,v){if(n>0){hanoi(n-1,f,v,t);print(f,"->",t);hanoi(n-1,v,t,f)}}
+BEGIN{hanoi(4,"left","middle","right")}'
+
+SUB move (n AS Integer, fromPeg AS Integer, toPeg AS Integer, viaPeg AS Integer)
+    IF n>0 THEN
+        move n-1, fromPeg, viaPeg, toPeg
+        PRINT "Move disk from "; fromPeg; " to "; toPeg
+        move n-1, viaPeg, toPeg, fromPeg
+    END IF
+END SUB
+ 
+move 4,1,2,3
+
+10 DIM N(1024), F(1024), T(1024), V(1024): REM STACK PER PARAMETER
+20 SP = 0:    REM STACK POINTER
+30 N(SP) = 4: REM START WITH 4 DISCS
+40 F(SP) = 1: REM ON PEG 1
+50 T(SP) = 2: REM MOVE TO PEG 2
+60 V(SP) = 3: REM VIA PEG 3
+70 GOSUB 100
+80 END
+90 REM MOVE SUBROUTINE 
+100 IF N(SP) = 0 THEN RETURN
+110 OS = SP:           REMEMBER STACK POINTER
+120 SP = SP + 1:       REM INCREMENT STACK POINTER
+130 N(SP) = N(OS) - 1: REM MOVE N-1 DISCS
+140 F(SP) = F(OS)    : REM FROM START PEG
+150 T(SP) = V(OS)    : REM TO VIA PEG
+160 V(SP) = T(OS)    : REM VIA TO PEG
+170 GOSUB 100
+180 OS = SP - 1: REM OS WILL HAVE CHANGED
+190 PRINT "MOVE DISC FROM"; F(OS); "TO"; T(OS)
+200 N(SP) = N(OS) - 1: REM MOVE N-1 DISCS
+210 F(SP) = V(OS)    : REM FROM VIA PEG
+220 T(SP) = T(OS)    : REM TO DEST PEG
+230 V(SP) = F(OS)    : REM VIA FROM PEG
+240 GOSUB 100
+250 SP = SP - 1      : REM RESTORE STACK POINTER FOR CALLER
+260 RETURN
+
+call move(4,1,2,3)
+print "Towers of Hanoi puzzle completed!"
+end
+ 
+subroutine move (n, fromPeg, toPeg, viaPeg)
+    if n>0 then
+        call move(n-1, fromPeg, viaPeg, toPeg)
+        print "Move disk from "+fromPeg+" to "+toPeg
+        call move(n-1, viaPeg, toPeg, fromPeg)
+    end if
+end subroutine
+
+@echo off
+setlocal enabledelayedexpansion
+ 
+	%==The main thing==%
+	%==First param - Number of disks==%
+	%==Second param - Start pole==%
+	%==Third param - End pole==%
+	%==Fourth param - Helper pole==%
+call :move 4 START END HELPER
+echo.
+pause
+exit /b 0
+ 
+	%==The "function"==%
+:move
+	setlocal
+	set n=%1
+	set from=%2
+	set to=%3
+	set via=%4
+ 
+	if %n% gtr 0 (
+		set /a x=!n!-1
+		call :move !x! %from% %via% %to%
+		echo Move top disk from pole %from% to pole %to%.
+		call :move !x! %via% %to% %from%
+	) 
+	exit /b 0
+
+      DIM Disc$(13),Size%(3)
+      FOR disc% = 1 TO 13
+        Disc$(disc%) = STRING$(disc%," ")+STR$disc%+STRING$(disc%," ")
+        IF disc%>=10 Disc$(disc%) = MID$(Disc$(disc%),2)
+        Disc$(disc%) = CHR$17+CHR$(128+disc%-(disc%>7))+Disc$(disc%)+CHR$17+CHR$128
+      NEXT disc%
+ 
+      MODE 3
+      OFF
+      ndiscs% = 13
+      FOR n% = ndiscs% TO 1 STEP -1
+        PROCput(n%,1)
+      NEXT
+      INPUT TAB(0,0) "Press Enter to start" dummy$
+      PRINT TAB(0,0) SPC(20);
+      PROChanoi(ndiscs%,1,2,3)
+      VDU 30
+      END
+ 
+      DEF PROChanoi(a%,b%,c%,d%)
+      IF a%=0 ENDPROC
+      PROChanoi(a%-1,b%,d%,c%)
+      PROCtake(a%,b%)
+      PROCput(a%,c%)
+      PROChanoi(a%-1,d%,c%,b%)
+      ENDPROC
+ 
+      DEF PROCput(disc%,peg%)
+      PRINTTAB(13+26*(peg%-1)-disc%,20-Size%(peg%))Disc$(disc%);
+      Size%(peg%) = Size%(peg%)+1
+      ENDPROC
+ 
+      DEF PROCtake(disc%,peg%)
+      Size%(peg%) = Size%(peg%)-1
+      PRINTTAB(13+26*(peg%-1)-disc%,20-Size%(peg%))STRING$(2*disc%+1," ");
+      ENDPROC
+
+( ( move
+  =   n from to via
+    .   !arg:(?n,?from,?to,?via)
+      & (   !n:>0
+          & move$(!n+-1,!from,!via,!to)
+          & out$("Move disk from pole " !from " to pole " !to)
+          & move$(!n+-1,!via,!to,!from)
+        | 
+        )
+  )
+& move$(4,1,2,3)
+);
+
+[
+This implementation is recursive and uses
+a stack, consisting of frames that are 8
+bytes long. The layout is as follows:
+ 
+Byte   Description
+   0   recursion flag
+       (the program stops if the flag is
+        zero)
+   1   the step which is currently
+       executed
+       4 means a call to
+               move(a, c, b, n - 1)
+       3 means a call to
+               move(a, b, c, 1)
+       2 means a call to
+               move(b, a, c, n - 1)
+       1 prints the source and dest pile
+   2   flag to check whether the current
+       step has already been done or if
+       it still must be executed
+   3   the step which will be executed
+       in the next loop
+   4   the source pile
+   5   the helper pile
+   6   the destination pile
+   7   the number of disks to move
+ 
+The first stack frame (0 0 0 0 0 0 0 0)
+is used to abort the recursion.
+]
+ 
+>>>>>>>>
+ 
+These are the parameters for the program
+(1 4 1 0 'a 'b 'c 5)
++>++++>+>>
+>>>>++++++++[<++++++++++++>-]<
+[<<<+>+>+>-]<<<+>++>+++>+++++>
+<<<<<<<<
+ 
+[> while (recurse)
+  [- if (step gt 0)
+    >[-]+< todo = 1
+    [- if (step gt 1)
+      [- if (step gt 2)
+        [- if (step gt 3)
+          >>+++<< next = 3
+          >-< todo = 0
+          >>>>>>[>+>+<<-]>[<+>-]> n dup
+          -
+          [[-] if (sub(n 1) gt 0)
+            <+>>>++++> push (1 0 0 4)
+ 
+            copy and push a
+            <<<<<<<<[>>>>>>>>+>+
+            <<<<<<<<<-]>>>>>>>>
+            >[<<<<<<<<<+>>>>>>>>>-]< >
+ 
+            copy and push c
+            <<<<<<<[>>>>>>>+>+
+            <<<<<<<<-]>>>>>>>
+            >[<<<<<<<<+>>>>>>>>-]< >
+ 
+            copy and push b
+            <<<<<<<<<[>>>>>>>>>+>+
+            <<<<<<<<<<-]>>>>>>>>>
+            >[<<<<<<<<<<+>>>>>>>>>>-]< >
+ 
+            copy n and push sub(n 1)
+            <<<<<<<<[>>>>>>>>+>+
+            <<<<<<<<<-]>>>>>>>>
+            >[<<<<<<<<<+>>>>>>>>>-]< -
+            >>
+          ]
+          <<<<<<<<
+        ]
+        >[-< if ((step gt 2) and todo)
+          >>++<< next = 2
+          >>>>>>>
+          +>>>+> push 1 0 0 1 a b c 1
+          <<<<<<<<[>>>>>>>>+>+
+          <<<<<<<<<-]>>>>>>>>
+          >[<<<<<<<<<+>>>>>>>>>-]< > a
+          <<<<<<<<[>>>>>>>>+>+
+          <<<<<<<<<-]>>>>>>>>
+          >[<<<<<<<<<+>>>>>>>>>-]< > b
+          <<<<<<<<[>>>>>>>>+>+
+          <<<<<<<<<-]>>>>>>>>
+          >[<<<<<<<<<+>>>>>>>>>-]< > c
+          + >>
+        >]<
+      ]
+      >[-< if ((step gt 1) and todo)
+        >>>>>>[>+>+<<-]>[<+>-]> n dup
+        -
+        [[-] if (n sub 1 gt 0)
+          <+>>>++++> push (1 0 0 4)
+ 
+          copy and push b
+          <<<<<<<[>>>>>>>+
+          <<<<<<<-]>>>>>>>
+          >[<<<<<<<<+>>>>>>>>-]< >
+ 
+          copy and push a
+          <<<<<<<<<[>>>>>>>>>+
+          <<<<<<<<<-]>>>>>>>>>
+          >[<<<<<<<<<<+>>>>>>>>>>-]< >
+ 
+          copy and push c
+          <<<<<<<<[>>>>>>>>+
+          <<<<<<<<-]>>>>>>>>
+          >[<<<<<<<<<+>>>>>>>>>-]< >
+ 
+          copy n and push sub(n 1)
+          <<<<<<<<[>>>>>>>>+>+
+          <<<<<<<<<-]>>>>>>>>
+          >[<<<<<<<<<+>>>>>>>>>-]< -
+          >>
+        ]
+        <<<<<<<<
+      >]<
+    ]
+    >[-< if ((step gt 0) and todo)
+      >>>>>>>
+      >++++[<++++++++>-]<
+      >>++++++++[<+++++++++>-]<++++
+      >>++++++++[<++++++++++++>-]<+++++
+      >>+++++++++[<++++++++++++>-]<+++
+      <<<
+      >.+++++++>.++.--.<<.
+      >>-.+++++.----.<<.
+      >>>.<---.+++.>+++.+.+.<.<<.
+      >.>--.+++++.---.++++.
+        -------.+++.<<.
+      >>>++.-------.-.<<<.
+      >+.>>+++++++.---.-----.<<<.
+      <<<<.>>>>.
+      >>----.>++++++++.<+++++.<<.
+      >.>>.---.-----.<<<.
+      <<.>>++++++++++++++.
+      >>>[-]<[-]<[-]<[-]
+      +++++++++++++.---.[-]
+      <<<<<<<
+    >]<
+    >>[<<+>>-]<< step = next
+  ]
+  return with clear stack frame
+  <[-]>[-]>[-]>[-]>[-]>[-]>[-]>[-]<<<<<<
+  <<<<<<<<
+  >>[<<+>>-]<< step = next
+  <
+]
+
+#include <stdio.h>
+ 
+void move(int n, int from, int to, int via)
+{
+  if (n > 0) {
+    move(n - 1, from, via, to);
+    printf("Move disk from pole %d to pole %d\n", from, to);
+    move(n - 1, via, to, from);
+  }
+}
+int main()
+{
+  move(4, 1,2,3);
+  return 0;
+}
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+ 
+typedef struct { int *x, n; } tower;
+tower *new_tower(int cap)
+{
+	tower *t = calloc(1, sizeof(tower) + sizeof(int) * cap);
+	t->x = (int*)(t + 1);
+	return t;
+}
+ 
+tower *t[3];
+int height;
+ 
+void text(int y, int i, int d, const char *s)
+{
+	printf("\033[%d;%dH", height - y + 1, (height + 1) * (2 * i + 1) - d);
+	while (d--) printf("%s", s);
+}
+ 
+void add_disk(int i, int d)
+{
+	t[i]->x[t[i]->n++] = d;
+	text(t[i]->n, i, d, "==");
+ 
+	usleep(100000);
+	fflush(stdout);
+}
+ 
+int remove_disk(int i)
+{
+	int d = t[i]->x[--t[i]->n];
+	text(t[i]->n + 1, i, d, "  ");
+	return d;
+}
+ 
+void move(int n, int from, int to, int via)
+{
+	if (!n) return;
+ 
+	move(n - 1, from, via, to);
+	add_disk(to, remove_disk(from));
+	move(n - 1, via, to, from);
+}
+ 
+int main(int c, char *v[])
+{
+	puts("\033[H\033[J");
+ 
+	if (c <= 1 || (height = atoi(v[1])) <= 0)
+		height = 8;
+	for (c = 0; c < 3; c++)	 t[c] = new_tower(height);
+	for (c = height; c; c--) add_disk(0, c);
+ 
+	move(height, 0, 2, 1);
+ 
+	text(1, 0, 1, "\n");
+	return 0;
+}
+
+public  void move(int n, int from, int to, int via) {
+   if (n == 1) {
+     System.Console.WriteLine("Move disk from pole " + from + " to pole " + to);
+   } else {
+     move(n - 1, from, via, to);
+     move(1, from, to, via);
+     move(n - 1, via, to, from);
+   }
+ }
+ 
+ void move(int n, int from, int to, int via) {
+  if (n == 1) {
+    std::cout << "Move disk from pole " << from << " to pole " << to << std::endl;
+  } else {
+    move(n - 1, from, via, to);
+    move(1, from, to, via);
+    move(n - 1, via, to, from);
+  }
+}
+
+(defn towers-of-hanoi [n from to via]
+  (if (= n 1)
+    (println (format "Move from %s to %s" from to))
+    (do
+      (towers-of-hanoi (dec n) from via to)
+      (println (format "Move from %s to %s" from to))
+      (recur (dec n) via to from))))
+      
+       >>SOURCE FREE
+IDENTIFICATION DIVISION.
+PROGRAM-ID. towers-of-hanoi.
+ 
+PROCEDURE DIVISION.
+    CALL "move-disk" USING 4, 1, 2, 3
+    .
+END PROGRAM towers-of-hanoi.
+ 
+IDENTIFICATION DIVISION.
+PROGRAM-ID. move-disk RECURSIVE.
+ 
+DATA DIVISION.
+LINKAGE SECTION.
+01  n                         PIC 9 USAGE COMP.
+01  from-pole                 PIC 9 USAGE COMP.
+01  to-pole                   PIC 9 USAGE COMP.
+01  via-pole                  PIC 9 USAGE COMP.
+ 
+PROCEDURE DIVISION USING n, from-pole, to-pole, via-pole.
+    IF n > 0
+       SUBTRACT 1 FROM n
+       CALL "move-disk" USING CONTENT n, from-pole, via-pole, to-pole
+       DISPLAY "Move disk from pole " from-pole " to pole " to-pole
+       CALL "move-disk" USING CONTENT n, via-pole, to-pole, from-pole
+    END-IF
+    .
+END PROGRAM move-disk.
+
+hanoi = (ndisks, start_peg=1, end_peg=3) ->
+  if ndisks
+    staging_peg = 1 + 2 + 3 - start_peg - end_peg
+    hanoi(ndisks-1, start_peg, staging_peg)
+    console.log "Move disk #{ndisks} from peg #{start_peg} to #{end_peg}"
+    hanoi(ndisks-1, staging_peg, end_peg)
+ 
+hanoi(4)
+
+(defun move (n from to via)
+  (cond ((= n 1)
+         (format t "Move from ~A to ~A.~%" from to))
+        (t
+         (move (- n 1) from via to)
+         (format t "Move from ~A to ~A.~%" from to)
+         (move (- n 1) via to from))))
+         
+import std.stdio;
+ 
+void hanoi(in int n, in char from, in char to, in char via) {
+    if (n > 0) {
+        hanoi(n - 1, from, via, to);
+        writefln("Move disk %d from %s to %s", n, from, to);
+        hanoi(n - 1, via, to, from);
+    }
+}
+ 
+void main() {
+    hanoi(3, 'L', 'M', 'R');
+}
+
+// Code found and then improved by Glenn C. Rhoads,
+// then some more by M. Kolar (2000).
+void main(in string[] args) {
+    import core.stdc.stdio, std.conv, std.typetuple;
+ 
+    immutable size_t n = (args.length > 1) ? args[1].to!size_t : 3;
+    size_t[3] p = [(1 << n) - 1, 0, 0];
+ 
+    // Show the start configuration of the pegs.
+    '|'.putchar;
+    foreach_reverse (immutable i; 1 .. n + 1)
+        printf(" %d", i);
+    "\n|\n|".puts;
+ 
+    foreach (immutable size_t x; 1 .. (1 << n)) {
+        {
+            immutable size_t i1 = x & (x - 1);
+            immutable size_t fr = (i1 + i1 / 3) & 3;
+            immutable size_t i2 = (x | (x - 1)) + 1;
+            immutable size_t to = (i2 + i2 / 3) & 3;
+ 
+            size_t j = 1;
+            for (size_t w = x; !(w & 1); w >>= 1, j <<= 1) {}
+ 
+            // Now j is not the number of the disk to move,
+            // it contains the single bit to be moved:
+            p[fr] &= ~j;
+            p[to] |= j;
+        }
+ 
+        // Show the current configuration of pegs.
+        foreach (immutable size_t k; TypeTuple!(0, 1, 2)) {
+            "\n|".printf;
+            size_t j = 1 << n;
+            foreach_reverse (immutable size_t w; 1 .. n + 1) {
+                j >>= 1;
+                if (j & p[k])
+                    printf(" %zd", w);
+            }
+        }
+        '\n'.putchar;
+    }
+}
+
+main() { 
+  moveit(from,to) {
+    print("move ${from} ---> ${to}");
+  }
+ 
+  hanoi(height,toPole,fromPole,usePole) {
+    if (height>0) {
+      hanoi(height-1,usePole,fromPole,toPole);  
+      moveit(fromPole,toPole);
+      hanoi(height-1,toPole,usePole,fromPole);
+    }
+  }
+ 
+  hanoi(3,3,1,2);
+}
+
+main() {
+  String say(String from, String to) => "$from ---> $to"; 
+ 
+  hanoi(int height, int toPole, int fromPole, int usePole) {
+    if (height > 0) {
+      hanoi(height - 1, usePole, fromPole, toPole);  
+      print(say(fromPole.toString(), toPole.toString()));
+      hanoi(height - 1, toPole, usePole, fromPole);
+    }
+  }
+ 
+  hanoi(3, 3, 1, 2);
+}
+
+ [ # move(from, to)
+    n           # print from
+    [ --> ]n    # print " --> "
+    p           # print to\n
+    sw          # p doesn't pop, so get rid of the value
+ ]sm
+ 
+ [ # init(n)
+    sw          # tuck n away temporarily
+    9           # sentinel as bottom of stack
+    lw          # bring n back
+    1           # "from" tower's label
+    3           # "to" tower's label
+    0           # processed marker
+ ]si
+ 
+ [ # Move()
+    lt          # push to
+    lf          # push from
+    lmx         # call move(from, to)
+ ]sM
+ 
+ [ # code block <d>
+    ln          # push n
+    lf          # push from
+    lt          # push to
+    1           # push processed marker 1
+    ln          # push n
+    1           # push 1
+    -           # n - 1
+    lf          # push from
+    ll          # push left
+    0           # push processed marker 0
+ ]sd
+ 
+ [ # code block <e>
+    ln          # push n
+    1           # push 1
+    -           # n - 1
+    ll          # push left
+    lt          # push to
+    0           # push processed marker 0
+ ]se
+ 
+ [ # code block <x>
+    ln 1 =M
+    ln 1 !=d
+ ]sx
+ 
+ [ # code block <y>
+    lMx
+    lex
+ ]sy
+ 
+ [ # quit()
+    q           # exit the program
+ ]sq
+ 
+ [ # run()
+    d 9 =q      # if stack empty, quit()
+    sp          # processed
+    st          # to
+    sf          # from
+    sn          # n
+    6           #
+    lf          #
+    -           #
+    lt          #
+    -           # 6 - from - to
+    sl          #
+    lp 0 =x     #
+    lp 0 !=y    #
+    lrx         # loop
+ ]sr
+ 
+ 5lix # init(n)
+ lrx # run()
+ 
+ def move(out, n, fromPeg, toPeg, viaPeg) {
+    if (n.aboveZero()) {
+        move(out, n.previous(), fromPeg, viaPeg, toPeg)
+        out.println(`Move disk $n from $fromPeg to $toPeg.`)
+        move(out, n.previous(), viaPeg, toPeg, fromPeg)
+    }
+}
+ 
+move(stdout, 4, def left {}, def right {}, def middle {})
+
+class
+	APPLICATION
+ 
+create
+	make
+ 
+feature {NONE} -- Initialization
+ 
+	make
+		do
+			move (4, "A", "B", "C")
+		end
+ 
+feature -- Towers of Hanoi
+ 
+	move (n: INTEGER; frm, to, via: STRING)
+		require
+			n > 0
+	    do
+			if n = 1 then
+    			print ("Move disk from pole " + frm + " to pole " + to + "%N")
+    		else
+    			move (n - 1, frm, via, to)
+    			move (1, frm, to, via)
+    			move (n - 1, via, to, frm)
+	        end
+	    end
+end
+
+open monad io
+:::IO
+ 
+//Functional approach
+hanoi 0 _ _ _ = []
+hanoi n a b c = hanoi (n - 1) a c b ++ [(a,b)] ++ hanoi (n - 1) c b a
+ 
+hanoiIO n = mapM_ f $ hanoi n 1 2 3 where
+  f (x,y) = putStrLn $ "Move " ++ show x ++ " to " ++ show y
+ 
+//Imperative approach using IO monad
+hanoiM n = hanoiM' n 1 2 3 where
+  hanoiM' 0 _ _ _ = return ()
+  hanoiM' n a b c = do
+    hanoiM' (n - 1) a c b
+    putStrLn $ "Move " ++ show a ++ " to " ++ show b
+    hanoiM' (n - 1) c b a
+    
+defmodule RC do
+  def hanoi(n) when 0<n and n<10, do: hanoi(n, 1, 2, 3)
+ 
+  defp hanoi(1, f, _, t), do: move(f, t)
+  defp hanoi(n, f, u, t) do
+    hanoi(n-1, f, t, u)
+    move(f, t)
+    hanoi(n-1, u, f, t)
+  end
+ 
+  defp move(f, t), do: IO.puts "Move disk from #{f} to #{t}"
+end
+ 
+RC.hanoi(3)
+
+(defun move (n from to via)
+  (cond ((= n 1)
+         (print (format "Move from %S to %S" from to)))
+        (t
+	 (progn
+	   (move (- n 1) from via to)
+	   (print (format "Move from %S to %S" from to))
+	   (move (- n 1) via to from)))))
+
+move(1, F, T, _V) -> 
+  io:format("Move from ~p to ~p~n", [F, T]);
+move(N, F, T, V) -> 
+  move(N-1, F, V, T), 
+  move(1  , F, T, V),
+  move(N-1, V, T, F).
+  
+!-----------------------------------------------------------
+! HANOI.R : solve tower of Hanoi puzzle using a recursive 
+! modified algorithm.
+!-----------------------------------------------------------
+ 
+PROGRAM HANOI
+ 
+!$INTEGER
+ 
+!VAR I,J,MOSSE,NUMBER
+ 
+PROCEDURE PRINTMOVE
+  LOCAL SOURCE$,DEST$
+  MOSSE=MOSSE+1
+  CASE I OF
+     1-> SOURCE$="Left" END ->
+     2-> SOURCE$="Center" END ->
+     3-> SOURCE$="Right" END ->
+  END CASE
+  CASE J OF
+     1-> DEST$="Left" END ->
+     2-> DEST$="Center" END ->
+     3-> DEST$="Right" END ->
+  END CASE
+  PRINT("I move a disk from ";SOURCE$;" to ";DEST$)
+END PROCEDURE
+ 
+PROCEDURE MOVE
+  IF NUMBER<>0 THEN
+     NUMBER=NUMBER-1
+     J=6-I-J
+     MOVE
+     J=6-I-J
+     PRINTMOVE
+     I=6-I-J
+     MOVE
+     I=6-I-J
+     NUMBER=NUMBER+1
+  END IF
+END PROCEDURE
+ 
+BEGIN
+  MAXNUM=12
+  MOSSE=0
+  PRINT(CHR$(12);TAB(25);"--- TOWERS OF HANOI ---")
+  REPEAT
+     PRINT("Number of disks ";)
+     INPUT(NUMBER)
+  UNTIL NUMBER>1 AND NUMBER<=MAXNUM
+  PRINT
+  PRINT("For ";NUMBER;"disks the total number of moves is";2^NUMBER-1)
+  I=1  ! number of source pole
+  J=3  ! number of destination pole
+  MOVE
+END PROGRAM
+
+#light
+let rec hanoi num start finish =
+  match num with
+  | 0 -> [ ]
+  | _ -> let temp = (6 - start - finish)
+         (hanoi (num-1) start temp) @ [ start, finish ] @ (hanoi (num-1) temp finish)
+ 
+[<EntryPoint>]
+let main args =
+  (hanoi 4 1 2) |> List.iter (fun pair -> match pair with
+                                          | a, b -> printf "Move disc from %A to %A\n" a b)
+  0
+
+["Move disk from "$!\" to "$!\"
+"]p:  { to from }
+[n;0>[n;1-n: @\ h;! @\ p;! \@ h;! \@ n;1+n:]?]h:  { via to from }
+4n:["right"]["middle"]["left"]h;!%%%
+
+USING: formatting kernel locals math ;
+IN: rosettacode.hanoi
+ 
+: move ( from to -- )
+    "%d->%d\n" printf ;
+:: hanoi ( n from to other -- )
+    n 0 > [
+        n 1 - from other to hanoi
+        from to move
+        n 1 - other to from hanoi
+    ] when ;
+
+CREATE peg1 ," left "   
+CREATE peg2 ," middle " 
+CREATE peg3 ," right " 
+ 
+: .$   COUNT TYPE ;
+: MOVE-DISK 
+  LOCALS| via to from n | 
+  n 1 =
+  IF   CR ." Move disk from " from .$ ." to " to .$ 
+  ELSE n 1- from via to RECURSE 
+       1    from to via RECURSE 
+       n 1- via to from RECURSE 
+  THEN ;
+  
+: left   ." left" ;
+: right  ." right" ;
+: middle ." middle" ;
+ 
+: move-disk ( v t f n -- v t f )
+  dup 0= if drop exit then
+  1-       >R
+  rot swap R@ ( t v f n-1 ) recurse
+  rot swap
+  2dup cr ." Move disk from " execute ."  to " execute
+  swap rot R> ( f t v n-1 ) recurse
+  swap rot ;
+: hanoi ( n -- )
+  1 max >R ['] right ['] middle ['] left R> move-disk drop drop drop ;
+
+PROGRAM TOWER
+ 
+  CALL Move(4, 1, 2, 3)
+ 
+CONTAINS
+ 
+  RECURSIVE SUBROUTINE Move(ndisks, from, to, via)
+    INTEGER, INTENT (IN) :: ndisks, from, to, via
+ 
+    IF (ndisks == 1) THEN
+       WRITE(*, "(A,I1,A,I1)") "Move disk from pole ", from, " to pole ", to
+    ELSE
+       CALL Move(ndisks-1, from, via, to)
+       CALL Move(1, from, to, via)
+       CALL Move(ndisks-1, via, to, from)
+    END IF
+  END SUBROUTINE Move
+ 
+END PROGRAM TOWER
+
+Hanoi := function(n)
+	local move;
+	move := function(n, a, b, c) # from, through, to
+		if n = 1 then
+			Print(a, " -> ", c, "\n");
+		else
+			move(n - 1, a, c, b);
+			move(1, a, b, c);
+			move(n - 1, b, a, c);
+		fi;
+	end;
+	move(n, "A", "B", "C");
+end;
+
+include "ConsoleWindow"
+ 
+void local fn move( n as long, fromPeg as long, toPeg as long, viaPeg as long )
+if n > 0
+   fn move( n-1, fromPeg, viaPeg, toPeg )
+   print "Move disk from "; fromPeg; " to "; toPeg
+   fn move( n-1, viaPeg, toPeg, fromPeg )
+end if
+end fn
+ 
+fn move( 4, 1, 2, 3 )
+print
+print "Towers of Hanoi puzzle solved."
+end
+
+package main
+ 
+import "fmt"
+ 
+// a towers of hanoi solver just has one method, play
+type solver interface {
+    play(int)
+}
+ 
+func main() {
+    var t solver    // declare variable of solver type
+    t = new(towers) // type towers must satisfy solver interface
+    t.play(4)
+}
+ 
+// towers is example of type satisfying solver interface
+type towers struct {
+    // an empty struct.  some other solver might fill this with some
+    // data representation, maybe for algorithm validation, or maybe for
+    // visualization.
+}
+ 
+// play is sole method required to implement solver type
+func (t *towers) play(n int) {
+    // drive recursive solution, per task description
+    t.moveN(n, 1, 2, 3)
+}
+ 
+// recursive algorithm
+func (t *towers) moveN(n, from, to, via int) {
+    if n > 0 {
+        t.moveN(n-1, from, via, to)
+        t.move1(from, to)
+        t.moveN(n-1, via, to, from)
+    }
+}
+ 
+// example function prints actions to screen.
+// enhance with validation or visualization as needed.
+func (t *towers) move1(from, to int) {
+    fmt.Println("move disk from rod", from, "to rod", to)
+}
+
+package main
+ 
+import "fmt"
+ 
+func main() {
+	move(3, "A", "B", "C")
+}
+ 
+func move(n uint64, a, b, c string) {
+	if n > 0 {
+		move(n-1, a, c, b)
+		fmt.Println("Move disk from " + a + " to " + c)
+		move(n-1, b, a, c)
+	}
+}
+
+def tail = { list, n ->  def m = list.size(); list[([m - n, 0].max())..<m] }
+ 
+final STACK = [A:[],B:[],C:[]].asImmutable()
+ 
+def report = { it -> }
+def check = { it -> }
+ 
+def moveRing = { from, to ->  to << from.pop(); report(); check(to) }
+ 
+def moveStack
+moveStack = { from, to, using = STACK.values().find { !(it.is(from) || it.is(to)) } ->
+    if (!from) return
+    def n = from.size()
+    moveStack(tail(from, n-1), using, to)
+    moveRing(from, to)
+    moveStack(tail(using, n-1), to, from)
+}
+
+enum Ring {
+    S('°'), M('o'), L('O'), XL('( )');
+    private sym
+    private Ring(sym) { this.sym=sym }
+    String toString() { sym }
+}
+ 
+report = { STACK.each { k, v ->  println "${k}: ${v}" }; println() }
+check = { to -> assert to == ([] + to).sort().reverse() }
+ 
+Ring.values().reverseEach { STACK.A << it }
+report()
+check(STACK.A)
+moveStack(STACK.A, STACK.C)
+
+hanoi :: Integer -> a -> a -> a -> [(a, a)]
+hanoi 0 _ _ _ = []
+hanoi n a b c = hanoi (n-1) a c b ++ [(a,b)] ++ hanoi (n-1) c b a
+
+hanoiIO n = mapM_ f $ hanoi n 1 2 3 where
+  f (x,y) = putStrLn $ "Move " ++ show x ++ " to " ++ show y
+  
+hanoiM :: Integer -> IO ()
+hanoiM n = hanoiM' n 1 2 3 where
+  hanoiM' 0 _ _ _ = return ()
+  hanoiM' n a b c = do
+    hanoiM' (n-1) a c b
+    putStrLn $ "Move " ++ show a ++ " to " ++ show b
+    hanoiM' (n-1) c b a
+    
+procedure main(arglist)
+hanoi(arglist[1]) | stop("Usage: hanoi n\n\rWhere n is the number of disks to move.")
+end
+ 
+#procedure hanoi(n:integer, needle1:1, needle2:2)   # unicon shorthand for icon code 1,2,3 below
+ 
+procedure hanoi(n, needle1, needle2)   #: solve towers of hanoi by moving  n disks from needle 1 to needle2 via other
+local other
+ 
+n := integer(0 < n) | runerr(n,101)       # 1 ensure integer (this also ensures it's positive too)
+/needle1 := 1                             # 2 default
+/needle2 := 2                             # 3 default
+ 
+if n = 1 then
+   write("Move disk from ", needle1, " to ", needle2)
+else {
+   other := 6 - needle1 - needle2         # clever but somewhat un-iconish way to find other
+   hanoi(n-1, needle1, other)             
+   write("Move disk from ", needle1, " to ", needle2)
+   hanoi(n-1, other, needle2)            
+}
+return
+end
+
+Hanoi is a room.
+ 
+A post is a kind of supporter. A post is always fixed in place.
+ 
+The left post, the middle post, and the right post are posts in Hanoi.
+ 
+A disk is a kind of supporter.
+The red disk is a disk on the left post.
+The orange disk is a disk on the red disk.
+The yellow disk is a disk on the orange disk.
+The green disk is a disk on the yellow disk.
+ 
+Definition: a disk is topmost if nothing is on it.
+ 
+When play begins:
+	move 4 disks from the left post to the right post via the middle post.
+ 
+To move (N - number) disk/disks from (FP - post) to (TP - post) via (VP - post):
+	if N > 0:
+		move N - 1 disks from FP to VP via TP;
+		say "Moving a disk from [FP] to [TP]...";
+		let D be a random topmost disk enclosed by FP;
+		if a topmost disk (called TD) is enclosed by TP, now D is on TD;
+		otherwise now D is on TP;
+		move N - 1 disks from VP to TP via FP.
+		
+hanoi := method(n, from, to, via,
+  if (n == 1) then (
+    writeln("Move from ", from, " to ", to)
+  ) else (
+    hanoi(n - 1, from, via, to  )
+    hanoi(1    , from, to , via )
+    hanoi(n - 1, via , to , from)
+  )
+)
+
+ = method(n, f, u, t,
+  if(n < 2,
+    "#{f} --> #{t}" println,
+ 
+    H(n - 1, f, t, u)
+    "#{f} --> #{t}" println
+    H(n - 1, u, f, t)
+  )
+)
+ 
+hanoi = method(n,
+  H(n, 1, 2, 3)
+)
+
+H =: i.@,&2 ` (({&0 2 1,0 2,{&1 0 2)@$:@<:) @. *    NB. tacit using anonymous recursion
+
+H1=: monad define                                   NB. explicit equivalent of H
+  if. y do.
+    ({&0 2 1 , 0 2 , {&1 0 2) H1 y-1
+  else.
+    i.0 2
+  end.
+)
+
+hanoi=: monad define
+  moves=. H y
+  disks=.  $~` ((],[,]) $:@<:) @.* y
+  ('move disk ';' from peg ';' to peg ');@,."1 ":&.>disks,.1+moves
+)
+
+public void move(int n, int from, int to, int via) {
+  if (n == 1) {
+    System.out.println("Move disk from pole " + from + " to pole " + to);
+  } else {
+    move(n - 1, from, via, to);
+    move(1, from, to, via);
+    move(n - 1, via, to, from);
+  }
+}
+
+function move(n, a, b, c) {
+  if (n > 0) {
+    move(n-1, a, c, b);
+    console.log("Move disk from " + a + " to " + c);
+    move(n-1, b, a, c);
+  }
+}
+move(4, "A", "B", "C");
+
+(function () {
+ 
+  // hanoi :: n -> s -> s -> s -> [[s, s]]
+  function hanoi(n, a, b, c) {
+    return n ? hanoi(n - 1, a, c, b).concat(
+      [[a, b]]
+    ).concat(hanoi(n - 1, c, b, a)) : [];
+  }
+ 
+  return hanoi(3, 'left', 'right', 'mid')
+  .map(function (d) {
+    return d[0] + ' -> ' + d[1];
+  });
+ 
+})();
+
+DEFINE hanoi == [[rolldown] infra] dip 
+                [ [ [null] [pop pop] ] 
+                  [ [dup2 [[rotate] infra] dip pred] 
+                    [ [dup rest put] dip 
+                      [[swap] infra] dip pred ] 
+                    [] ] ] 
+                condnestrec.
+                
+# n is the number of disks to move from From to To
+def move(n; From; To; Via):
+  if n > 0 then
+     # move all but the largest at From to Via (according to the rules):
+     move(n-1; From; Via; To),
+     # ... so the largest disk at From is now free to move to its final destination:
+     "Move disk from \(From) to \(To)",
+     # Move the remaining disks at Via to To:
+     move(n-1; Via; To; From)
+  else empty
+  end;          
+
+  h:{[n;a;b;c]if[n>0;_f[n-1;a;c;b];`0:,//$($n,":",$a,"->",$b,"\n");_f[n-1;c;b;a]]}
+   h[4;1;2;3]
+
+#!/usr/bin/lasso9
+ 
+define towermove(
+	disks::integer,
+	a,b,c
+) => {
+	if(#disks > 0) => {
+		towermove(#disks - 1, #a, #c, #b )
+		stdoutnl("Move disk from " + #a + " to " + #c)
+		towermove(#disks - 1, #b, #a, #c )
+	}
+}
+ 
+towermove((integer($argv -> second || 3)), "A", "B", "C")
+
+  source$ ="A"
+    via$    ="B"
+    target$ ="C"
+ 
+    call hanoi 4, source$, target$, via$        '   ie call procedure to move legally 4 disks from peg A to peg C via peg B
+ 
+    wait
+ 
+    sub hanoi numDisks, source$, target$, via$
+        if numDisks =0 then
+            exit sub
+        else
+            call hanoi numDisks -1, source$, via$, target$
+            print " Move disk "; numDisks; " from peg "; source$; " to peg "; target$
+            call hanoi numDisks -1, via$, target$, source$
+        end if
+    end sub
+ 
+    end
+
+to move :n :from :to :via
+  if :n = 0 [stop]
+  move :n-1 :from :via :to
+  (print [Move disk from] :from [to] :to)
+  move :n-1 :via :to :from
+end
+move 4 "left "middle "right
+
+:- object(hanoi).
+ 
+    :- public(run/1).
+    :- mode(run(+integer), one).
+    :- info(run/1, [
+        comment is 'Solves the towers of Hanoi problem for the specified number of disks.',
+        argnames is ['Disks']]).
+ 
+    run(Disks) :-
+        move(Disks, left, middle, right).
+ 
+    move(1, Left, _, Right):-
+        !,
+        report(Left, Right).
+    move(Disks, Left, Aux, Right):-
+        Disks2 is Disks - 1,
+        move(Disks2, Left, Right, Aux),
+        report(Left, Right),
+        move(Disks2, Aux, Left, Right).
+ 
+    report(Pole1, Pole2):-
+        write('Move a disk from '),
+        writeq(Pole1),
+        write(' to '),
+        writeq(Pole2),
+        write('.'),
+        nl.
+ 
+:- end_object.
+
+HAI
+ 
+HOW DUZ I HANOI YR N AN YR SRC AN YR DST AN YR VIA
+    BTW VISIBLE SMOOSH "HANOI N=" N " SRC=" SRC " DST=" DST " VIA=" VIA MKAY
+    BOTH SAEM N AN 0, O RLY?
+        YA RLY
+            BTW VISIBLE "Done."
+            GTFO
+        NO WAI
+            I HAS A LOWER ITZ DIFF OF N AN 1
+            HANOI DST VIA SRC LOWER
+            VISIBLE SMOOSH "Move disc " N " from " SRC ... 
+            " to " DST MKAY
+            HANOI SRC DST VIA LOWER
+    OIC
+IF U SAY SO
+ 
+HANOI 2 3 1 4 BTW requires reversed arguments?
+ 
+KTHXBYE
+
+function move(n, src, dst, via)
+    if n > 0 then
+        move(n - 1, src, via, dst)
+        print(src, 'to', dst)
+        move(n - 1, via, dst, src)
+    end
+end
+ 
+move(4, 1, 2, 3)
+
+Hanoi[0, from_, to_, via_] := Null  
+Hanoi[n_Integer, from_, to_, via_] :=
+  (Hanoi[n-1, from, via, to];
+   Print["Move disk from pole ", from, " to ", to, "."];
+   Hanoi[n-1, via, from, to])
+   
+function towerOfHanoi(n,A,C,B)
+    if (n~=0)
+        towerOfHanoi(n-1,A,B,C);
+        disp(sprintf('Move plate %d from tower %d to tower %d',[n A C]));
+        towerOfHanoi(n-1,B,C,A);
+    end
+end
+
+MODULE Hanoi EXPORTS Main;
+ 
+FROM IO IMPORT Put;
+FROM Fmt IMPORT Int;
+ 
+PROCEDURE doHanoi(n, from, to, using: INTEGER) =
+  BEGIN
+    IF n > 0 THEN
+      doHanoi(n - 1, from, using, to);
+      Put("move " & Int(from) & " --> " & Int(to) & "\n");
+      doHanoi(n - 1, using, to, from);
+    END;
+  END doHanoi;
+ 
+BEGIN
+  doHanoi(4, 1, 2, 3);
+END Hanoi.
+
+def move(n, fromPeg, toPeg, viaPeg):
+    if (n > 0):
+        move(n.previous(), fromPeg, viaPeg, toPeg)
+        traceln(`Move disk $n from $fromPeg to $toPeg`)
+        move(n.previous(), viaPeg, toPeg, fromPeg)
+ 
+move(3, "left", "right", "middle")
+
+
+
+
+using System; 
+using System.Console;
+ 
+module Towers
+{
+    Hanoi(n : int, from = 1, to = 3, via = 2) : void
+    {
+        when (n > 0)
+        {
+            Hanoi(n - 1, from, via, to);
+            WriteLine("Move disk from peg {0} to peg {1}", from, to);
+            Hanoi(n - 1, via, to, from);
+        }
+    }
+ 
+    Main() : void
+    {
+        Hanoi(4)
+    } 
+}
+
+/* NetRexx */
+options replace format comments java crossref symbols binary
+ 
+runSample(arg)
+return
+ 
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+method runSample(arg) private static
+  parse arg discs .
+  if discs = '', discs < 1 then discs = 4
+  say 'Minimum moves to solution:' 2 ** discs - 1
+  moves = move(discs)
+  say 'Solved in' moves 'moves.'
+  return
+ 
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+method move(discs = int 4, towerFrom = int 1, towerTo = int 2, towerVia = int 3, moves = int 0) public static
+  if discs == 1 then do
+    moves = moves + 1
+    say 'Move disc from peg' towerFrom 'to peg' towerTo '- Move No:' Rexx(moves).right(5)
+    end
+  else do
+    moves = move(discs - 1, towerFrom, towerVia, towerTo, moves)
+    moves = move(1, towerFrom, towerTo, towerVia, moves)
+    moves = move(discs - 1, towerVia, towerTo, towerFrom, moves)
+    end
+  return moves
+ 
+ 
+ (define (move n from to via)
+			(if (> n 0) 
+				(move (- n 1) from via to
+				(print "move disk from pole " from " to pole " to "\n")
+				(move (- n 1) via to from))))
+ 
+(move 4 1 2 3)
+
+proc hanoi(disks: int, fromTower: string, toTower: string, viaTower: string) =
+  if disks != 0:
+    hanoi(disks - 1, fromTower, viaTower, toTower)
+    echo("Move disk ", disks, " from ", fromTower, " to ", toTower)
+    hanoi(disks - 1, viaTower, toTower, fromTower)
+ 
+hanoi(4, "1", "2", "3")
+
+class Hanoi {
+  function : Main(args : String[]) ~ Nil {
+    Move(4, 1, 2, 3);
+  }
+ 
+  function: Move(n:Int, f:Int, t:Int, v:Int) ~ Nil {
+    if(n = 1) {
+      "Move disk from pole {$f} to pole {$t}"->PrintLine();
+    }
+    else {
+      Move(n - 1, f, v, t);
+      Move(1, f, t, v);
+      Move(n - 1, v, t, f);
+    };
+  }
+}
+
+#import <Foundation/NSObject.h>
+ 
+@interface TowersOfHanoi: NSObject {
+	int pegFrom;
+	int pegTo;
+	int pegVia;
+	int numDisks;
+}
+ 
+-(void) setPegFrom: (int) from andSetPegTo: (int) to andSetPegVia: (int) via andSetNumDisks: (int) disks;
+-(void) movePegFrom: (int) from andMovePegTo: (int) to andMovePegVia: (int) via andWithNumDisks: (int) disks;
+@end
+
+#import "TowersOfHanoi.h"
+@implementation TowersOfHanoi
+ 
+-(void) setPegFrom: (int) from andSetPegTo: (int) to andSetPegVia: (int) via andSetNumDisks: (int) disks {
+	pegFrom = from;
+	pegTo = to;
+	pegVia = via;
+	numDisks = disks;
+}
+ 
+-(void) movePegFrom: (int) from andMovePegTo: (int) to andMovePegVia: (int) via andWithNumDisks: (int) disks {
+	if (disks == 1) {
+            printf("Move disk from pole %i to pole %i\n", from, to);
+        } else {
+ 			[self movePegFrom: from andMovePegTo: via andMovePegVia: to andWithNumDisks: disks-1];
+			[self movePegFrom: from andMovePegTo: to andMovePegVia: via andWithNumDisks: 1];
+			[self movePegFrom: via andMovePegTo: to andMovePegVia: from andWithNumDisks: disks-1];
+        }
+}
+ 
+@end
+
+#import <stdio.h>
+#import "TowersOfHanoi.h"
+ 
+int main( int argc, const char *argv[] ) {
+	@autoreleasepool {
+ 
+		TowersOfHanoi *tower = [[TowersOfHanoi alloc] init];
+ 
+		int from = 1;
+		int to = 3;
+		int via = 2;
+		int disks = 3;
+ 
+		[tower setPegFrom: from andSetPegTo: to andSetPegVia: via andSetNumDisks: disks];
+ 
+		[tower movePegFrom: from andMovePegTo: to andMovePegVia: via andWithNumDisks: disks];
+ 
+	}
+	return 0;
+}
+
+let rec hanoi n a b c =
+  if n <> 0 then begin
+    hanoi (pred n) a c b;
+    Printf.printf "Move disk from pole %d to pole %d\n" a b;
+    hanoi (pred n) c b a
+  end
+ 
+let () =
+  hanoi 4 1 2 3
+  
+function hanoimove(ndisks, from, to, via)
+  if ( ndisks == 1 )
+    printf("Move disk from pole %d to pole %d\n", from, to);
+  else
+    hanoimove(ndisks-1, from, via, to);
+    hanoimove(1, from, to, via);
+    hanoimove(ndisks-1, via, to, from);
+  endif
+endfunction
+ 
+hanoimove(4, 1, 2, 3);
+
+: move(n, from, to, via)
+   n 0 > ifTrue: [
+      move(n 1-, from, via, to)
+      System.Out "Move disk from " << from << " to " << to << cr
+      move(n 1-, via, to, from)
+      ] ;
+ 
+5 $left $middle $right) move 
+
+declare
+  proc {TowersOfHanoi N From To Via}
+     if N > 0 then
+        {TowersOfHanoi N-1 From Via To}
+        {System.showInfo "Move from "#From#" to "#To}
+        {TowersOfHanoi N-1 Via To From}
+     end
+  end
+in
+  {TowersOfHanoi 4 left middle right}
+  
+\\ Towers of Hanoi
+\\ 8/19/2016 aev
+\\ Where: n - number of disks, sp - start pole, ep - end pole.
+HanoiTowers(n,sp,ep)={
+  if(n!=0, 
+    HanoiTowers(n-1,sp,6-sp-ep);
+    print("Move disk ", n, " from pole ", sp," to pole ", ep);
+    HanoiTowers(n-1,6-sp-ep,ep); 
+    );
+}
+\\ Testing n=3:
+HanoiTowers(3,1,3);
+
+program Hanoi;
+type
+  TPole = (tpLeft, tpCenter, tpRight);
+const
+  strPole:array[TPole] of string[6]=('left','center','right');
+ 
+ procedure MoveStack (const Ndisks : integer; const Origin,Destination,Auxiliary:TPole);
+ begin
+  if Ndisks >0 then begin
+     MoveStack(Ndisks - 1, Origin,Auxiliary, Destination );
+     Writeln('Move disk ',Ndisks ,' from ',strPole[Origin],' to ',strPole[Destination]);
+     MoveStack(Ndisks - 1, Auxiliary, Destination, origin);
+  end;
+ end;
+ 
+begin
+ MoveStack(4,tpLeft,tpCenter,tpRight);
+end.
+
+program Hanoi;
+type
+  TPole = (tpLeft, tpCenter, tpRight);
+const
+  strPole:array[TPole] of string[6]=('left','center','right');
+ 
+ procedure MoveOneDisk(const DiskNum:integer; const Origin,Destination:TPole);
+ begin
+  Writeln('Move disk ',DiskNum,' from ',strPole[Origin],' to ',strPole[Destination]);
+ end;
+ 
+ procedure MoveStack (const Ndisks : integer; const Origin,Destination,Auxiliary:TPole);
+ begin
+  if Ndisks =1 then
+       MoveOneDisk(1,origin,Destination)
+  else begin
+       MoveStack(Ndisks - 1, Origin,Auxiliary, Destination );
+       MoveOneDisk(Ndisks,origin,Destination);
+       MoveStack(Ndisks - 1, Auxiliary, Destination, origin);
+  end;
+ end;
+ 
+begin
+ MoveStack(4,tpLeft,tpCenter,tpRight);
+end.
+
+sub hanoi {
+    my ($n, $from, $to, $via) = (@_, 1, 2, 3);
+ 
+    if ($n == 1) {
+        print "Move disk from pole $from to pole $to.\n";
+    } else {
+        hanoi($n - 1, $from, $via, $to);
+        hanoi(1, $from, $to, $via);
+        hanoi($n - 1, $via, $to, $from);
+    };
+};
+
+subset Peg of Int where 1|2|3;
+ 
+multi hanoi (0,      Peg $a,     Peg $b,     Peg $c)     { }
+multi hanoi (Int $n, Peg $a = 1, Peg $b = 2, Peg $c = 3) {
+    hanoi $n - 1, $a, $c, $b;
+    say "Move $a to $b.";
+    hanoi $n - 1, $c, $b, $a;
+}
+
+module hanoi;
+ 
+extern printf;
+ 
+@Void move(@Integer n, @Integer from, @Integer to, @Integer via) [
+	if (n > 0) {
+		move(n - 1, from, via, to);
+		printf("Move disk from pole %d to pole %d\n", from, to);
+		move(n - 1, via, to, from);
+	}
+]
+ 
+@Integer main [
+	move(4, 1,2,3);
+	return 0;
+]
+
+function move($n,$from,$to,$via) {
+    if ($n === 1) {
+        print("Move disk from pole $from to pole $to");
+    } else {
+        move($n-1,$from,$via,$to);
+        move(1,$from,$to,$via);
+        move($n-1,$via,$to,$from);
+    }
+}
+
+(de move (N A B C)  # Use: (move 3 'left 'center 'right)
+   (unless (=0 N)
+      (move (dec N) A C B)
+      (println 'Move 'disk 'from A 'to B)
+      (move (dec N) C B A) ) )
+      
+define hanoi(n, src, dst, via);
+if n > 0 then
+    hanoi(n - 1, src, via, dst);
+    'Move disk ' >< n >< ' from ' >< src >< ' to ' >< dst >< '.' =>
+    hanoi(n - 1, via, dst, src);
+endif;
+enddefine;
+ 
+hanoi(4, "left", "middle", "right");
+
+tower: proc options (main);
+ 
+   call Move (4,1,2,3);
+ 
+Move: procedure (ndiscs, from, to, via) recursive;
+   declare (ndiscs, from, to, via) fixed binary;
+ 
+   if ndiscs = 1 then
+      put skip edit ('Move disc from pole ', trim(from), ' to pole ',
+         trim(to) ) (a);
+   else
+      do;
+         call Move (ndiscs-1, from, via, to);
+         call Move (1, from, to, via);
+         call Move (ndiscs-1, via, to, from);
+      end;
+end Move;
+ 
+end tower;
+
+\newcount\hanoidepth
+\def\hanoi#1{%
+  \hanoidepth = #1
+  \move abc
+}%
+\def\move#1#2#3{%
+  \advance \hanoidepth by -1
+  \ifnum \hanoidepth > 0
+    \move #1#3#2
+  \fi
+  Move the upper disk from pole #1 to pole #3.\par
+  \ifnum \hanoidepth > 0
+    \move#2#1#3
+  \fi
+  \advance \hanoidepth by 1
+}
+ 
+\hanoi{5}
+\end
+
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 300 300
+ 
+/plate {
+        exch 100 mul 50 add exch th mul 10 add moveto
+        dup s mul neg 2 div 0 rmoveto
+        dup s mul 0 rlineto
+        0 th rlineto
+        s neg mul 0 rlineto
+        closepath gsave .5 setgray fill grestore 0 setgray stroke
+} def
+ 
+/drawtower {
+        0 1 2 { /x exch def /y 0 def
+                tower x get {
+                        dup 0 gt { x y plate /y y 1 add def } {pop} ifelse
+                } forall
+        } for showpage
+} def
+ 
+/apop { [ exch aload pop /last exch def ] last } def
+/apush{ [ 3 1 roll aload pop counttomark -1 roll ] } def
+ 
+/hanoi {
+        0 dict begin /from /mid /to /h 5 -1 2 { -1 roll def } for
+        h 1 eq {        
+                tower from get apop tower to get apush
+                tower to 3 -1 roll put
+                tower from 3 -1 roll put
+                drawtower
+        } {     
+                /h h 1 sub def
+                from to mid h hanoi
+                from mid to 1 hanoi
+                mid from to h hanoi
+        } ifelse
+        end
+} def
+ 
+ 
+/n 12 def
+/s 90 n div def
+/th 180 n div def
+/tower [ [n 1 add -1 2 { } for ] [] [] ] def
+ 
+drawtower 0 1 2 n hanoi
+ 
+%%EOF
+
+function hanoi($n, $a,  $b, $c) {
+    if($n -eq 1) {
+        "$a -> $c"
+    } else{    
+         hanoi ($n - 1) $a $c $b
+         hanoi 1 $a $b $c
+         hanoi ($n - 1) $b $a $c
+    }
+}
+hanoi 3 "A" "B" "C"
+
+hanoi(N) :- move(N,left,center,right).
+ 
+move(0,_,_,_) :- !.
+move(N,A,B,C) :-
+    M is N-1,
+    move(M,A,C,B),
+    inform(A,B),
+    move(M,C,B,A).
+ 
+inform(X,Y) :- write([move,a,disk,from,the,X,pole,to,Y,pole]), nl.
+
+hanoi(N, Src, Aux, Dest, Moves-NMoves) :-
+  NMoves is 2^N - 1,
+  length(Moves, NMoves),
+  phrase(move(N, Src, Aux, Dest), Moves).
+ 
+ 
+move(1, Src, _, Dest) --> !,
+  [Src->Dest].
+ 
+move(2, Src, Aux, Dest) --> !,
+  [Src->Aux,Src->Dest,Aux->Dest].
+ 
+move(N, Src, Aux, Dest) -->
+  { succ(N0, N) },
+  move(N0, Src, Dest, Aux),
+  move(1, Src, Aux, Dest),
+  move(N0, Aux, Src, Dest).
+  
+  Procedure Hanoi(n, A.s, C.s, B.s)
+  If n
+    Hanoi(n-1, A, B, C)
+    PrintN("Move the plate from "+A+" to "+C)
+    Hanoi(n-1, B, C, A)
+  EndIf
+EndProcedure
+
+Procedure Hanoi(n, A.s, C.s, B.s)
+  If n
+    Hanoi(n-1, A, B, C)
+    PrintN("Move the plate from "+A+" to "+C)
+    Hanoi(n-1, B, C, A)
+  EndIf
+EndProcedure
+ 
+If OpenConsole()
+  Define n=3
+  PrintN("Moving "+Str(n)+" pegs."+#CRLF$)
+  Hanoi(n,"Left Peg","Middle Peg","Right Peg")
+  PrintN(#CRLF$+"Press ENTER to exit."): Input()
+EndIf
+
+def hanoi(ndisks, startPeg=1, endPeg=3):
+    if ndisks:
+        hanoi(ndisks-1, startPeg, 6-startPeg-endPeg)
+        print "Move disk %d from peg %d to peg %d" % (ndisks, startPeg, endPeg)
+        hanoi(ndisks-1, 6-startPeg-endPeg, endPeg)
+ 
+hanoi(ndisks=4)
+
+hanoimove <- function(ndisks, from, to, via) {
+  if ( ndisks == 1 )
+    cat("move disk from", from, "to", to, "\n")
+  else {
+    hanoimove(ndisks-1, from, via, to)
+    hanoimove(1, from, to, via)
+    hanoimove(ndisks-1, via, to, from)
+  }
+}
+ 
+hanoimove(4,1,2,3)
+
+#lang racket
+(define (hanoi n a b c)
+  (when (> n 0)
+    (hanoi (- n 1) a c b)
+    (printf "Move ~a to ~a\n" a b)
+    (hanoi (- n 1) c b a)))
+(hanoi 4 'left 'middle 'right)
+
+public void hanoi(ndisks, startPeg, endPeg){
+	if(ndisks>0){
+		hanoi(ndisks-1, startPeg, 6 - startPeg - endPeg);
+		println("Move disk <ndisks> from peg <startPeg> to peg <endPeg>");
+		hanoi(ndisks-1, 6 - startPeg - endPeg, endPeg);
+	}
+}
+
+define hanoi use ndisks, startpeg, endpeg
+   ndisks 0 > if
+      6 startpeg - endpeg - startpeg ndisks 1 - hanoi
+      endpeg startpeg ndisks "Move disk %d from peg %d to peg %d\n" print 
+      endpeg 6 startpeg - endpeg - ndisks 1 - hanoi
+ 
+define dohanoi use ndisks
+   # startpeg=1, endpeg=3
+   3 1 ndisks hanoi
+ 
+# 4 disks
+4 dohanoi
+
+rebol [
+	Title: "Towers of Hanoi"
+	Author: oofoe
+	Date: 2009-12-08
+	URL: http://rosettacode.org/wiki/Towers_of_Hanoi
+]
+ 
+hanoi: func [
+	{Begin moving the golden disks from one pole to the next.
+	 Note: when last disk moved, the world will end.}
+	disks [integer!] "Number of discs on starting pole."
+	/poles "Name poles."
+	from to via
+][
+    if disks = 0 [return]
+	if not poles [from: 'left  to: 'middle  via: 'right]
+ 
+    hanoi/poles disks - 1 from via to
+	print [from "->" to]
+    hanoi/poles disks - 1 via to from
+]
+ 
+hanoi 4
+
+4 elements a b c n
+ 
+: vars !c !b !a !n ;
+: hanoi ( num from to via -- )
+  vars
+  @n 0 <>
+  [
+    @n @a @b @c
+    @n 1- @a @c @b hanoi
+    vars
+    @b @a "\nMove a ring from %d to %d" puts
+    @n 1- @c @b @a hanoi
+  ] ifTrue ;
+ 
+4 1 3 2 hanoi
+
+/*REXX program  displays  the  moves  to solve  the  Tower of Hanoi  (with  N  disks).  */
+parse arg N .                                    /*get optional number of disks from CL.*/
+if N=='' | N==","  then N=3                      /*Not specified?  Then use the default.*/
+#=0                                              /*#:  the number of disk moves (so far)*/
+z=2**N - 1                                       /*Z:   "     "    " minimum # of moves.*/
+call mov  1, 3, N                                /*move the top disk,  then recurse ··· */
+say
+say 'The minimum number of moves to solve a '      N"-disk  Tower of Hanoi is "      z
+exit                                             /*stick a fork in it,  we're all done. */
+/*──────────────────────────────────────────────────────────────────────────────────────*/
+dsk:  #=#+1                                      /*bump the (disk) move counter by one. */
+      say 'step'  right(#, length(z))":  move disk on tower"    arg(1)    '───►'    arg(2)
+      return                                     /* [↑]  display the move message (text)*/
+/*──────────────────────────────────────────────────────────────────────────────────────*/
+mov:  procedure expose # z;              parse arg  @1,  @2,  @3
+      if @3==1  then call dsk @1,  @2
+                else do;  call mov @1,        6-@1-@2,   @3-1
+                          call mov @1,        @2,        1
+                          call mov 6-@1-@2,   @2,        @3-1
+                     end
+      return
+      
+/*REXX program  displays  the  moves  to solve  the  Tower of Hanoi  (with  N  disks).  */
+parse arg N .                                    /*get optional number of disks from CL.*/
+if N=='' | N==","  then N=3                      /*Not specified?  Then use the default.*/
+sw=80;     wp=sw%3-1;     blanks=left('', wp)    /*define some default REXX variables.  */
+c.1= sw % 3 % 2                                  /* [↑]  SW: assume default Screen Width*/
+c.2= sw % 2 - 1
+c.3= sw - 1 - c.1 - 1
+#=0;       z=2**N-1;      moveK=z                /*#moves; min# of moves; where to move.*/
+@abc='abcdefghijklmnopqrstuvwxyN'                /*dithering chars when many disks used.*/
+ebcdic= ('f0'x==0)                               /*determine if EBCDIC or ASCII machine.*/
+ 
+if ebcdic then do;   bar= 'bf'x;    ar= "df"x;     boxen= 'db9f9caf'x;         down= "9a"x
+                      tr= 'bc'x;    bl= "ab"x;     br= 'bb'x;   vert= "fa"x;     tl= 'ac'x
+               end
+          else do;   bar= 'c4'x;    ar= "10"x;     boxen= 'b0b1b2db'x;         down= "18"x
+                      tr= 'bf'x;    bl= "c0"x;     br= 'd9'x;   vert= "b3"x;     tl= 'da'x
+               end
+ 
+verts= vert || vert;       Tcorners=    tl || tr
+downs= down || down;       Bcorners=    bl || br
+box  = left(boxen, 1);     boxChars= boxen || @abc
+$.=0;    $.1=N;    k=N;    kk=k+k
+ 
+  do j=1  for N;   @.3.j=blanks;     @.2.j=blanks;     @.1.j=center( copies( box, kk), wp)
+  if N<=length(boxChars)  then @.1.j= translate(@.1.j, , substr( boxChars, kk%2, 1), box)
+  kk=kk - 2
+  end   /*j*/                                    /*populate the tower of Hanoi spindles.*/
+ 
+call showTowers;   call mov 1,3,N;   say
+say 'The minimum number of moves to solve a '      N"-disk  Tower of Hanoi is "      z
+exit                                             /*stick a fork in it,  we're all done. */
+/*──────────────────────────────────────────────────────────────────────────────────────*/
+dsk: parse arg from dest;  #=#+1;  pp=
+     if from==1  then do;  pp=overlay(bl,  pp, c.1)
+                           pp=overlay(bar, pp, c.1+1, c.dest-c.1-1, bar) || tr
+                      end
+     if from==2  then do
+                      lpost=min(2, dest)
+                      hpost=max(2, dest)
+                      if dest==1  then do;  pp=overlay(tl,  pp, c.1)
+                                            pp=overlay(bar, pp, c.1+1, c.2-c.1-1, bar)||br
+                                       end
+                      if dest==3  then do;  pp=overlay(bl,  pp, c.2)
+                                            pp=overlay(bar, pp, c.2+1, c.3-c.2-1, bar)||tr
+                                       end
+                      end
+     if from==3  then do;  pp=overlay(br,  pp, c.3)
+                           pp=overlay(bar, pp, c.dest+1, c.3-c.dest-1, bar)
+                           pp=overlay(tl,  pp, c.dest)
+                      end
+     say translate(pp, downs, Bcorners || Tcorners || bar);    say overlay(moveK,pp,1)
+     say translate(pp, verts, Tcorners || Bcorners || bar)
+     say translate(pp, downs, Tcorners || Bcorners || bar);    moveK=moveK-1
+     $.from=$.from-1;      $.dest=$.dest+1;    _f=$.from+1;    _t=$.dest
+     @.dest._t=@.from._f;  @.from._f=blanks;   call showTowers
+     return
+/*──────────────────────────────────────────────────────────────────────────────────────*/
+mov: if arg(3)==1  then call dsk arg(1) arg(2)
+                   else do;  call mov arg(1),          6-arg(1)-arg(2), arg(3)-1
+                             call mov arg(1),          arg(2),          1
+                             call mov 6-arg(1)-arg(2), arg(2),          arg(3)-1
+                        end
+     return
+/*──────────────────────────────────────────────────────────────────────────────────────*/
+showTowers: do j=N  by -1  for N; _=@.1.j @.2.j @.3.j;  if _\=''  then say _; end;  return
+
+move(4, 1, 2, 3)
+ 
+func move n, src, dst, via
+     if n > 0 move(n - 1, src, via, dst)
+        see "" + src + " to " + dst + nl
+        move(n - 1, via, dst, src) ok
+        
+def move(num_disks, start=0, target=1, using=2)
+  if num_disks == 1
+   @towers[target] << @towers[start].pop
+    puts "Move disk from #{start} to #{target} : #{@towers}"
+  else
+    move(num_disks-1, start, using, target)
+    move(1,           start, target, using)
+    move(num_disks-1, using, target, start)
+  end 
+end
+ 
+n = 5
+@towers = [[*1..n].reverse, [], []]
+move(n)
+
+# solve(source, via, target)
+# Example:
+# solve([5, 4, 3, 2, 1], [], [])
+# Note this will also solve randomly placed disks,
+# "place all disk in target with legal moves only".
+def solve(*towers)
+  # total number of disks
+  disks = towers.inject(0){|sum, tower| sum+tower.length}
+  x=0 # sequence number
+  p towers # initial trace
+  # have we solved the puzzle yet?
+  while towers.last.length < disks do
+    x+=1 # assume the next step
+    from = (x&x-1)%3
+    to = ((x|(x-1))+1)%3
+    # can we actually take from tower?
+    if top = towers[from].last
+      bottom = towers[to].last
+      # is the move legal?
+      if !bottom || bottom > top
+        # ok, do it!
+        towers[to].push(towers[from].pop)
+        p towers # trace
+      end
+    end
+  end
+end
+ 
+solve([5, 4, 3, 2, 1], [], [])
+
+a = move(4, "1", "2", "3")
+function move(n, a$, b$, c$) 
+if n > 0 then
+	a = move(n-1, a$, c$, b$)
+	print "Move disk from " ; a$ ; " to " ; c$
+	a = move(n-1, b$, a$, c$)
+end if
+end function
+
+fn move_(n: i32, from: i32, to: i32, via: i32) {
+    if n > 0 {
+        move_(n - 1, from, via, to);
+        println!("Move disk from pole {} to pole {}", from, to);
+        move_(n - 1, via, to, from);
+    }
+}
+ 
+fn main() {
+    move_(4, 1,2,3);
+}
+
+class MAIN is
+ 
+  move(ndisks, from, to, via:INT) is
+    if ndisks = 1 then
+      #OUT + "Move disk from pole " + from + " to pole " + to + "\n";
+    else
+      move(ndisks-1, from, via, to);
+      move(1, from, to, via);
+      move(ndisks-1, via, to, from);
+    end;
+  end;
+ 
+  main is
+    move(4, 1, 2, 3);
+  end;
+end;
+
+def move(n: Int, from: Int, to: Int, via: Int) : Unit = {
+    if (n == 1) {
+      Console.println("Move disk from pole " + from + " to pole " + to)
+    } else {
+      move(n - 1, from, via, to)
+      move(1, from, to, via)
+      move(n - 1, via, to, from)
+    }
+  }
+  
+  object TowersOfHanoi {
+  import scala.reflect.Manifest
+ 
+  def simpleName(m:Manifest[_]):String = {
+    val name = m.toString
+    name.substring(name.lastIndexOf('$')+1)
+  }
+ 
+  trait Nat
+  final class _0 extends Nat
+  final class Succ[Pre<:Nat] extends Nat
+ 
+  type _1 = Succ[_0]
+  type _2 = Succ[_1]
+  type _3 = Succ[_2]
+  type _4 = Succ[_3]
+ 
+  case class Move[N<:Nat,A,B,C]()
+ 
+  implicit def move0[A,B,C](implicit a:Manifest[A],b:Manifest[B]):Move[_0,A,B,C] = {
+        System.out.println("Move from "+simpleName(a)+" to "+simpleName(b));null
+  }
+ 
+  implicit def moveN[P<:Nat,A,B,C](implicit m1:Move[P,A,C,B],m2:Move[_0,A,B,C],m3:Move[P,C,B,A])
+   :Move[Succ[P],A,B,C] = null
+ 
+  def run[N<:Nat,A,B,C](implicit m:Move[N,A,B,C]) = null
+ 
+  case class Left()
+  case class Center()
+  case class Right()
+ 
+  def main(args:Array[String]){
+    run[_2,Left,Right,Center]
+  }
+}
+
+(define (hanoi n a b c)
+  (if (> n 0)
+    (begin
+      (hanoi (- n 1) a c b)
+      (display "Move disk from pole ")
+      (display a)
+      (display " to pole ")
+      (display b)
+      (newline)
+      (hanoi (- n 1) c b a))))
+ 
+(hanoi 4 1 2 3)
+
+const proc: hanoi (in integer: disk, in string: source, in string: dest, in string: via) is func
+  begin
+    if disk > 0 then
+      hanoi(pred(disk), source, via, dest);
+      writeln("Move disk " <& disk <& " from " <& source <& " to " <& dest);
+      hanoi(pred(disk), via, dest, source);
+    end if;
+  end func;
+  
+  func hanoi(n, from=1, to=2, via=3) {
+    if (n == 1) {
+        say "Move disk from pole #{from} to pole #{to}.";
+    } else {
+        hanoi(n-1, from, via,   to);
+        hanoi(  1, from,  to,  via);
+        hanoi(n-1,  via,  to, from);
+    }
+}
+ 
+hanoi(4);
+
+*       # Note: count is global
+ 
+        define('hanoi(n,src,trg,tmp)') :(hanoi_end)
+hanoi   hanoi = eq(n,0) 1 :s(return)
+        hanoi(n - 1, src, tmp, trg)
+        count  = count + 1
+        output = count ': Move disc from ' src ' to ' trg
+        hanoi(n - 1, tmp, trg, src) :(return)
+hanoi_end
+ 
+*       # Test with 4 discs
+        hanoi(4,'A','C','B')
+end
+
+func hanoi(n:Int, a:String, b:String, c:String) {
+    if (n > 0) {
+        hanoi(n - 1, a, c, b)
+        println("Move disk from \(a) to \(c)")
+        hanoi(n - 1, b, a, c)
+    }
+}
+ 
+hanoi(4, "A", "B", "C")
+
+func hanoi(n:Int, a:String, b:String, c:String) {
+  if (n > 0) {
+    hanoi(n - 1, a: a, b: c, c: b)
+    print("Move disk from \(a) to \(c)")
+    hanoi(n - 1, a: b, b: a, c: c)
+  }
+}
+ 
+hanoi(4, a:"A", b:"B", c:"C")
+
+interp alias {} hanoi {} do_hanoi 0
+ 
+proc do_hanoi {count n {from A} {to C} {via B}} {
+    if {$n == 1} {
+        interp alias {} hanoi {} do_hanoi [incr count]
+        puts "$count: move from $from to $to"
+    } else {
+        incr n -1
+        hanoi $n $from $via $to
+        hanoi 1  $from $to $via
+        hanoi $n $via $to $from
+    }
+}
+ 
+hanoi 4
+
+PROGRAM:TOHSOLVE
+0→A
+1→B
+0→C
+0→D
+0→M
+1→R
+While A<1 or A>7
+Input "No. of rings=?",A
+End
+randM(A+1,3)→[C]
+[[1,2][1,3][2,3]]→[E]
+ 
+Fill(0,[C])
+For(I,1,A,1)
+I?[C](I,1)
+End
+ClrHome
+While [C](1,3)≠1 and [C](1,2)≠1
+ 
+For(J,1,3)
+For(I,1,A)
+If [C](I,J)≠0:Then
+Output(I+1,3J,[C](I,J))
+End
+End
+End
+While C=0
+Output(1,3B," ")
+1→I
+[E](R,2)→J
+While [C](I,J)=0 and I≤A
+I+1→I
+End
+[C](I,J)→D
+1→I
+[E](R,1)→J
+While [C](I,J)=0 and I≤A
+I+1→I
+End
+If (D<[C](I,J) and D≠0) or [C](I,J)=0:Then
+[E](R,2)→B
+Else
+[E](R,1)→B
+End
+ 
+1→I
+While [C](I,B)=0 and I≤A
+I+1→I
+End
+If I≤A:Then
+[C](I,B)→C
+0→[C](I,B)
+Output(I+1,3B," ")
+End
+Output(1,3B,"V")
+End
+ 
+While C≠0
+Output(1,3B," ")
+If B=[E](R,2):Then
+[E](R,1)→B
+Else
+[E](R,2)→B
+End
+ 
+1→I
+While [C](I,B)=0 and I≤A
+I+1→I
+End
+If [C](I,B)=0 or [C](I,B)>C:Then
+C→[C](I-1,B)
+0→C
+M+1→M
+End
+End
+Output(1,3B,"V")
+R+1→R
+If R=4:Then:1→R:End
+ 
+End
+
+value| sa sb sc n |
+[ to sc to sb to sa to n ] is vars!
+[ ( num from to via -- )
+  vars!
+  n 0 <>
+  [
+    n sa sb sc 
+    n 1- sa sc sb recurse
+    vars!
+    ." Move a ring from " sa . ." to " sb . cr
+    n 1- sc sb sa recurse
+  ] ifTrue
+] is hanoi
+
+// library: program: run: towersofhanoi: recursive: sub <description></description> <version>1.0.0.0.0</version> <version control></version control> (filenamemacro=runprrsu.s) [kn, ri, tu, 07-02-2012 19:54:23]
+PROC PROCProgramRunTowersofhanoiRecursiveSub( INTEGER totalDiskI, STRING fromS, STRING toS, STRING viaS, INTEGER bufferI )
+ IF ( totalDiskI == 0 )
+  RETURN()
+ ENDIF
+ PROCProgramRunTowersofhanoiRecursiveSub( totalDiskI - 1, fromS, viaS, toS, bufferI )
+ AddLine( Format( "Move disk", " ", totalDiskI, " ", "from peg", " ", "'", fromS, "'", " ", "to peg", " ", "'", toS, "'" ), bufferI )
+ PROCProgramRunTowersofhanoiRecursiveSub( totalDiskI - 1, viaS, toS, fromS, bufferI )
+END
+ 
+// library: program: run: towersofhanoi: recursive <description></description> <version>1.0.0.0.6</version> <version control></version control> (filenamemacro=runprtre.s) [kn, ri, tu, 07-02-2012 19:40:45]
+PROC PROCProgramRunTowersofhanoiRecursive( INTEGER totalDiskI, STRING fromS, STRING toS, STRING viaS )
+ INTEGER bufferI = 0
+ PushPosition()
+ bufferI = CreateTempBuffer()
+ PopPosition()
+ PROCProgramRunTowersofhanoiRecursiveSub( totalDiskI, fromS, toS, viaS, bufferI )
+ GotoBufferId( bufferI )
+END
+ 
+PROC Main()
+STRING s1[255] = "4"
+IF ( NOT ( Ask( "program: run: towersofhanoi: recursive: totalDiskI = ", s1, _EDIT_HISTORY_ ) ) AND ( Length( s1 ) > 0 ) ) RETURN() ENDIF
+ PROCProgramRunTowersofhanoiRecursive( Val( s1 ), "source", "target", "via" )
+END
+
+Proc  _Move(4, 1,2,3)                  ' 4 disks, 3 poles
+End
+ 
+_Move Param(4)
+  If (a@ > 0) Then
+    Proc _Move (a@ - 1, b@, d@, c@)
+    Print "Move disk from pole ";b@;" to pole ";c@
+    Proc _Move (a@ - 1, d@, c@, b@)
+  EndIf
+Return
+
+#!/bin/bash
+ 
+move()
+{
+  local n="$1"
+  local from="$2"
+  local to="$3"
+  local via="$4"
+ 
+  if [[ "$n" == "1" ]]
+  then
+    echo "Move disk from pole $from to pole $to"
+  else
+    move $(($n - 1)) $from $via $to
+    move 1 $from $to $via
+    move $(($n - 1)) $via $to $from
+  fi
+}
+ 
+move $1 $2 $3 $4
+
+#import nat
+ 
+move = ~&al^& ^rlPlrrPCT/~&arhthPX ^|W/~& ^|G/predecessor ^/~&htxPC ~&zyxPC
+ 
+#show+
+ 
+main = ^|T(~&,' -> '--)* move/4 <'start','end','middle'>
+
+Sub Move(n,fromPeg,toPeg,viaPeg)
+	If n > 0 Then
+		Move n-1, fromPeg, viaPeg, toPeg
+		WScript.StdOut.Write "Move disk from " & fromPeg & " to " & toPeg
+		WScript.StdOut.WriteBlankLines(1)
+		Move n-1, viaPeg, toPeg, fromPeg
+	End If
+End Sub
+ 
+Move 4,1,2,3
+WScript.StdOut.Write("Towers of Hanoi puzzle completed!")
+
+#1=1; #2=2; #3=3; #4=4          // move 4 disks from 1 to 2
+Call("MOVE_DISKS")
+Return
+ 
+// Move disks
+// #1 = from, #2 = to, #3 = via, #4 = number of disks
+//
+:MOVE_DISKS:
+if (#4 > 0) {
+    Num_Push(1,4)
+        #9=#2; #2=#3; #3=#9; #4--       // #1 to #3 via #2
+        Call("MOVE_DISKS")
+    Num_Pop(1,4)
+ 
+    Ins_Text("Move a disk from ")       // move one disk
+    Num_Ins(#1, LEFT+NOCR)
+    Ins_Text(" to ")
+    Num_Ins(#2, LEFT)
+ 
+    Num_Push(1,4)
+        #9=#1; #1=#3; #3 = #9; #4--     // #3 to #2 via #1
+        Call("MOVE_DISKS")
+    Num_Pop(1,4)
+}
+Return
+
+Module TowersOfHanoi
+    Sub MoveTowerDisks(ByVal disks As Integer, ByVal fromTower As Integer, ByVal toTower As Integer, ByVal viaTower As Integer)
+        If disks > 0 Then
+            MoveTowerDisks(disks - 1, fromTower, viaTower, toTower)
+            System.Console.WriteLine("Move disk {0} from {1} to {2}", disks, fromTower, toTower)
+            MoveTowerDisks(disks - 1, viaTower, toTower, fromTower)
+        End If
+    End Sub
+ 
+    Sub Main()
+        MoveTowerDisks(4, 1, 2, 3)
+    End Sub
+End Module
+
+code Text=12;
+ 
+proc MoveTower(Discs, From, To, Using);
+int  Discs, From, To, Using;
+[if Discs > 0 then
+    [MoveTower(Discs-1, From, Using, To);
+    Text(0, "Move from ");  Text(0, From);
+    Text(0, " peg to ");  Text(0, To);  Text(0, " peg.^M^J");
+    MoveTower(Discs-1, Using, To, From);
+    ];
+];
+ 
+MoveTower(3, "left", "right", "center")
+
+<xsl:template name="hanoi">
+<xsl:param name="n"/>
+<xsl:param name="from">left</xsl:param>
+<xsl:param name="to">middle</xsl:param>
+<xsl:param name="via">right</xsl:param>
+  <xsl:if test="$n &gt; 0">
+    <xsl:call-template name="hanoi">
+      <xsl:with-param name="n"    select="$n - 1"/>
+      <xsl:with-param name="from" select="$from"/>
+      <xsl:with-param name="to"   select="$via"/>
+      <xsl:with-param name="via"  select="$to"/>
+    </xsl:call-template>
+    <fo:block>
+      <xsl:text>Move disk from </xsl:text>
+      <xsl:value-of select="$from"/>
+      <xsl:text> to </xsl:text>
+      <xsl:value-of select="$to"/>
+    </fo:block>
+    <xsl:call-template name="hanoi">
+      <xsl:with-param name="n"    select="$n - 1"/>
+      <xsl:with-param name="from" select="$via"/>
+      <xsl:with-param name="to"   select="$to"/>
+      <xsl:with-param name="via"  select="$from"/>
+    </xsl:call-template>
+  </xsl:if>
+</xsl:template>
+
+declare function local:hanoi($disk as xs:integer, $from as xs:integer,
+    $to as xs:integer, $via as xs:integer) as element()* 
+{
+  if($disk > 0)
+  then (
+    local:hanoi($disk - 1, $from, $via, $to),
+    <move disk='{$disk}'><from>{$from}</from><to>{$to}</to></move>,
+    local:hanoi($disk - 1, $via, $to, $from)
+  ) 
+  else ()
+};
+ 
+<hanoi>
+{
+  local:hanoi(4, 1, 2, 3)
+}
+</hanoi>
+
+fcn move(n, from,to,via){
+   if (n>0){
+      move(n-1, from,via,to);
+      println("Move disk from pole %d to pole %d".fmt(from, to));
+      move(n-1, via,to,from);
+   }
+}
+move(3, 1,2,3);
