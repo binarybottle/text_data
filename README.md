@@ -13,4 +13,5 @@
 | "COCA blogs" | [Corpus of Contemporary American English](https://www.english-corpora.org/coca/) [blog samples](https://www.corpusdata.org/) |
 | "Google website" | [Google home page](https://google.com) (accessed 10/20/2020) |
 | "Software" | "Tower of Hanoi" (programming languages A-Z from [Rosetta Code](https://rosettacode.org/wiki/Towers_of_Hanoi)) |
-| "Test" | Ian Douglas's English test |
+| "Monkey text" | [Ian Douglas's English-generated monkey0-7.txt corpus](https://zenodo.org/record/4642460) |
+| "Coder text" | [Ian Douglas's software-generated coder0-7.txt corpus](https://zenodo.org/record/4642460) |
