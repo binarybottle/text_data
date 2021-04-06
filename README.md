@@ -15,3 +15,6 @@
 | "Software" | "Tower of Hanoi" (programming languages A-Z from [Rosetta Code](https://rosettacode.org/wiki/Towers_of_Hanoi)) |
 | "Monkey text" | [Ian Douglas's English-generated monkey0-7.txt corpus](https://zenodo.org/record/4642460) |
 | "Coder text" | [Ian Douglas's software-generated coder0-7.txt corpus](https://zenodo.org/record/4642460) |
+
+Reference for Monkey and Coder texts:
+Douglas, Ian. (2021, March 28). Keyboard Layout Analysis: Creating the Corpus, Bigram Chains, and Shakespeare's Monkeys (Version 1.0.0). Zenodo. http://doi.org/10.5281/zenodo.4642460
